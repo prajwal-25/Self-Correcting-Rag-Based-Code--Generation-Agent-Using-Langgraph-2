@@ -1,0 +1,10 @@
+flask
+flask-cors
+langchain
+langchain-community
+langchain-mistralai
+langgraph
+faiss-cpu
+beautifulsoup4
+langchain-huggingface
+langchain-text-splitters

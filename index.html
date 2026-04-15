@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeForge AI — RAG Code Generation Agent</title>
+    <meta name="description" content="An intelligent RAG-based code generation agent powered by LangGraph, Mistral AI, and FAISS. Generate, test, and self-correct Python code with AI.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="#" class="nav-logo">
+                <span class="logo-icon">⚡</span>
+                <span class="logo-text">CodeForge<span class="logo-ai">AI</span></span>
+            </a>
+            <div class="nav-links">
+                <a href="#architecture" class="nav-link">Architecture</a>
+                <a href="#chat" class="nav-link">Try It</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#tech" class="nav-link">Tech Stack</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero" id="hero">
+        <div class="hero-bg-grid"></div>
+        <div class="hero-glow"></div>
+        <div class="hero-content fade-in">
+            <div class="hero-badge">
+                <span class="badge-dot"></span>
+                RAG-Powered Code Agent
+            </div>
+            <h1 class="hero-title">
+                Generate. Test.<br>
+                <span class="hero-title-accent">Self-Correct.</span>
+            </h1>
+            <p class="hero-subtitle">
+                An intelligent code generation agent that retrieves context from Python documentation, 
+                generates structured solutions, and iteratively self-corrects until the code runs flawlessly.
+            </p>
+            <div class="hero-actions">
+                <a href="#chat" class="btn btn-primary">
+                    <span>Try the Agent</span>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </a>
+                <a href="#architecture" class="btn btn-secondary">View Architecture</a>
+            </div>
+            <div class="hero-stats">
+                <div class="stat">
+                    <span class="stat-value">3</span>
+                    <span class="stat-label">Max Iterations</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-value">3</span>
+                    <span class="stat-label">Doc Sources</span>
+                </div>
+                <div class="stat-divider"></div>
+                <div class="stat">
+                    <span class="stat-value">∞</span>
+                    <span class="stat-label">Possibilities</span>
+                </div>
+            </div>
+        </div>
+        <div class="hero-terminal fade-in">
+            <div class="terminal-header">
+                <div class="terminal-dots">
+                    <span class="dot dot-red"></span>
+                    <span class="dot dot-yellow"></span>
+                    <span class="dot dot-green"></span>
+                </div>
+                <span class="terminal-title">agent_output.py</span>
+            </div>
+            <pre class="terminal-body"><code><span class="code-comment"># Agent Pipeline</span>
+<span class="code-keyword">from</span> langgraph.graph <span class="code-keyword">import</span> StateGraph
+
+<span class="code-comment">---RETRIEVING CONTEXT---</span>
+<span class="code-comment">---GENERATING CODE---</span>
+<span class="code-comment">---TESTING GENERATED CODE---</span>
+
+<span class="code-keyword">class</span> <span class="code-func">CodeSchema</span>:
+    prefix: <span class="code-string">"Solution approach"</span>
+    imports: <span class="code-string">"import statements"</span>
+    code: <span class="code-string">"functional code"</span>
+
+<span class="code-comment"># ✓ Code passed all checks</span></code></pre>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section class="section architecture" id="architecture">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">How It Works</span>
+                <h2 class="section-title">Agent Architecture</h2>
+                <p class="section-desc">A self-correcting pipeline built with LangGraph's StateGraph</p>
+            </div>
+            <div class="arch-flow fade-in">
+                <div class="arch-node arch-node-start">
+                    <div class="arch-node-icon">▶</div>
+                    <div class="arch-node-label">START</div>
+                </div>
+                <div class="arch-arrow">
+                    <div class="arch-arrow-line"></div>
+                    <div class="arch-arrow-head"></div>
+                </div>
+                <div class="arch-node arch-node-retrieve">
+                    <div class="arch-node-icon">🔍</div>
+                    <div class="arch-node-label">Retrieve</div>
+                    <div class="arch-node-desc">FAISS Vector Search</div>
+                </div>
+                <div class="arch-arrow">
+                    <div class="arch-arrow-line"></div>
+                    <div class="arch-arrow-head"></div>
+                </div>
+                <div class="arch-node arch-node-generate">
+                    <div class="arch-node-icon">🤖</div>
+                    <div class="arch-node-label">Generate</div>
+                    <div class="arch-node-desc">Mistral AI LLM</div>
+                </div>
+                <div class="arch-arrow">
+                    <div class="arch-arrow-line"></div>
+                    <div class="arch-arrow-head"></div>
+                </div>
+                <div class="arch-node arch-node-check">
+                    <div class="arch-node-icon">✓</div>
+                    <div class="arch-node-label">Check Code</div>
+                    <div class="arch-node-desc">Runtime Validation</div>
+                </div>
+                <div class="arch-arrow">
+                    <div class="arch-arrow-line"></div>
+                    <div class="arch-arrow-head"></div>
+                </div>
+                <div class="arch-node arch-node-decision">
+                    <div class="arch-node-icon">◆</div>
+                    <div class="arch-node-label">Pass?</div>
+                </div>
+                <div class="arch-arrow">
+                    <div class="arch-arrow-line"></div>
+                    <div class="arch-arrow-head"></div>
+                </div>
+                <div class="arch-node arch-node-end">
+                    <div class="arch-node-icon">⏹</div>
+                    <div class="arch-node-label">END</div>
+                </div>
+                <!-- Retry loop arrow -->
+                <div class="arch-retry">
+                    <div class="arch-retry-label">Error? Retry (max 3×)</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chat Section -->
+    <section class="section chat-section" id="chat">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">Interactive</span>
+                <h2 class="section-title">Try the Agent</h2>
+                <p class="section-desc">Ask the agent to generate Python code — it will retrieve docs, generate, and self-correct.</p>
+            </div>
+            <div class="chat-container fade-in" id="chat-container">
+                <div class="chat-messages" id="chat-messages">
+                    <div class="chat-welcome">
+                        <div class="welcome-icon">⚡</div>
+                        <h3>CodeForge AI Agent</h3>
+                        <p>Ask me to generate any Python code. I'll retrieve relevant documentation, generate a solution, and test it automatically.</p>
+                        <div class="welcome-suggestions">
+                            <button class="suggestion-chip" onclick="useSuggestion(this)">Write a binary search algorithm</button>
+                            <button class="suggestion-chip" onclick="useSuggestion(this)">Create a linked list with insert and delete</button>
+                            <button class="suggestion-chip" onclick="useSuggestion(this)">Build a simple calculator with error handling</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chat-input-area">
+                    <div class="chat-input-wrapper">
+                        <textarea id="chat-input" placeholder="Ask me to generate Python code..." rows="1"></textarea>
+                        <button class="chat-send-btn" id="chat-send-btn" onclick="sendMessage()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 10l14-7-7 14v-7H3z" fill="currentColor"/></svg>
+                        </button>
+                    </div>
+                    <div class="chat-footer-note">Powered by Mistral AI + LangGraph + FAISS RAG Pipeline</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="section features" id="features">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">Capabilities</span>
+                <h2 class="section-title">Key Features</h2>
+            </div>
+            <div class="features-grid fade-in">
+                <div class="feature-card">
+                    <div class="feature-icon">🔍</div>
+                    <h3 class="feature-title">RAG-Powered Context</h3>
+                    <p class="feature-desc">Retrieves relevant Python documentation from a FAISS vector store using HuggingFace embeddings, providing rich context for accurate code generation.</p>
+                    <div class="feature-tech">FAISS · HuggingFace · WebBaseLoader</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🔄</div>
+                    <h3 class="feature-title">Self-Correcting Loop</h3>
+                    <p class="feature-desc">Generated code is executed and tested. If errors are found, the agent automatically retries with error context — up to 3 iterations.</p>
+                    <div class="feature-tech">StateGraph · Conditional Edges</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">📋</div>
+                    <h3 class="feature-title">Structured Output</h3>
+                    <p class="feature-desc">Every response follows a clean schema: problem description, import statements, and functional code — ready to copy and run.</p>
+                    <div class="feature-tech">Pydantic · CodeSchema</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🧠</div>
+                    <h3 class="feature-title">LangGraph Orchestration</h3>
+                    <p class="feature-desc">Built on LangGraph's StateGraph with checkpointing and memory, enabling complex multi-step agent workflows with state persistence.</p>
+                    <div class="feature-tech">LangGraph · InMemorySaver</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">⚡</div>
+                    <h3 class="feature-title">Mistral AI Engine</h3>
+                    <p class="feature-desc">Powered by Mistral's large language model for high-quality code generation with structured output support and zero-temperature precision.</p>
+                    <div class="feature-tech">ChatMistralAI · mistral-large-latest</div>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3 class="feature-title">Safe Code Execution</h3>
+                    <p class="feature-desc">Code is tested in a sandboxed environment using contextlib redirection, catching both syntax and runtime errors safely.</p>
+                    <div class="feature-tech">contextlib · exec · StringIO</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section class="section tech" id="tech">
+        <div class="container">
+            <div class="section-header fade-in">
+                <span class="section-tag">Built With</span>
+                <h2 class="section-title">Technology Stack</h2>
+            </div>
+            <div class="tech-grid fade-in">
+                <div class="tech-badge">
+                    <span class="tech-badge-name">LangChain</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">LangGraph</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">Mistral AI</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">FAISS</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">HuggingFace</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">Python</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">Flask</span>
+                </div>
+                <div class="tech-badge">
+                    <span class="tech-badge-name">Pydantic</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-icon">⚡</span>
+                    <span class="logo-text">CodeForge<span class="logo-ai">AI</span></span>
+                </div>
+                <p class="footer-text">RAG-based Code Generation Agent · Powered by LangGraph & Mistral AI</p>
+                <div class="footer-divider"></div>
+                <p class="footer-copyright">© 2026 CodeForge AI. Built with intelligence.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/script.js"></script>
+</body>
+</html>
