@@ -196,11 +196,27 @@ function scrollToBottom() {
 // ============ Code Copy ============
 function copyCode(id) {
     const codeEl = document.getElementById(id);
+    if (!codeEl) return;
     const text = codeEl.innerText || codeEl.textContent;
     navigator.clipboard.writeText(text).then(() => {
-        const btn = codeEl.closest('.code-block-wrapper').querySelector('.code-copy-btn');
-        btn.textContent = 'Copied!';
-        setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        const btn = codeEl.closest('.code-section').querySelector('.code-copy-btn');
+        if (btn) {
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }
+    }).catch(() => {
+        // Fallback for environments where clipboard API is blocked
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+        const btn = codeEl.closest('.code-section').querySelector('.code-copy-btn');
+        if (btn) {
+            btn.textContent = 'Copied!';
+            setTimeout(() => { btn.textContent = 'Copy'; }, 2000);
+        }
     });
 }
 
