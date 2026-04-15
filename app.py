@@ -34,7 +34,7 @@ CORS(app)
 # ============================================================
 # LLM & Structured Output
 # ============================================================
-os.environ["MISTRAL_API_KEY"] = "DCPfxCdp1fX09HGjbBldFlQwiRu4F5EW"
+os.environ["MISTRAL_API_KEY"] = "API_KEY"
 
 llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
