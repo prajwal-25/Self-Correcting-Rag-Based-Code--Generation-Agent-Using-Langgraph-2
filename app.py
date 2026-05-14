@@ -53,20 +53,17 @@ if not MISTRAL_API_KEY:
     logger.error("MISTRAL_API_KEY not set in environment")
     raise ValueError("MISTRAL_API_KEY environment variable is required")
 
-MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
-REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "120"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))  # Reduced from 3
+REQUEST_TIMEOUT = int(os.getenv("REQUEST_TIMEOUT", "60"))  # Reduced from 120
 MAX_CODE_LENGTH = int(os.getenv("MAX_CODE_LENGTH", "5000"))
 
 os.environ["MISTRAL_API_KEY"] = MISTRAL_API_KEY
 
-logger.info(f"Initializing LLM with mistral-small-latest model")
-llm = ChatMistralAI(model="mistral-small-latest", temperature=0, max_retries=MAX_RETRIES, timeout=REQUEST_TIMEOUT)
+logger.info(f"Initializing LLM with mistral-small-latest model (fast mode)")
 # ============================================================
 # LLM & Structured Output
 # ============================================================
-os.environ["MISTRAL_API_KEY"] = "API_KEY"
-
-llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
+llm = ChatMistralAI(model="mistral-small-latest", temperature=0, max_retries=MAX_RETRIES, timeout=REQUEST_TIMEOUT)
 
 
 class CodeSchema(BaseModel):
@@ -79,10 +76,15 @@ class CodeSchema(BaseModel):
 class GenerateRequest(BaseModel):
     """Validate code generation requests."""
     question: str = Field(..., min_length=1, max_length=1000, description="The code generation prompt")
+    skip_tests: bool = Field(default=True, description="Skip test generation for speed")
+    skip_execution: bool = Field(default=True, description="Skip code execution for speed")
+    skip_security: bool = Field(default=True, description="Skip security scan for speed")
+    skip_complexity: bool = Field(default=True, description="Skip complexity analysis for speed")
+    skip_quality: bool = Field(default=True, description="Skip pylint quality check for speed")
 
     class Config:
         json_schema_extra = {
-            "example": {"question": "Write a function to calculate factorial"}
+            "example": {"question": "Write a function to calculate factorial", "skip_tests": True}
         }
 
 
@@ -394,8 +396,9 @@ def generate_and_run_tests(code_str: str, imports_str: str, prefix: str) -> dict
 # ============================================================
 FAISS_INDEX_PATH = "faiss_index"
 
-logger.info("Setting up embeddings model...")
-embeddings = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2")
+logger.info("Setting up embeddings model (lightweight)...")
+# Use a smaller, faster embedding model
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
 if os.path.exists(FAISS_INDEX_PATH):
     logger.info("Loading FAISS index from cache...")
@@ -423,6 +426,7 @@ else:
     vectorstore.save_local(FAISS_INDEX_PATH)
     logger.info("FAISS index built and saved.")
 
+# Retrieve only 1 doc for speed
 retriever = vectorstore.as_retriever(search_kwargs={"k": 1})
 logger.info("RAG vector store ready.")
 
@@ -457,22 +461,13 @@ def generate(state: GraphState):
     error = state.error
 
     system_msg = (
-        "You are a helpful Python coding assistant that solves ANY coding problem.\n\n"
-        "Python documentation context (use only if directly relevant):\n{context}\n\n"
-        "RULES — follow ALL of these for EVERY response:\n"
-        "1. Write simple, clean, readable Python — favour clarity over cleverness.\n"
-        "2. You MAY import ANY library the user asks for "
-        "(e.g. matplotlib, numpy, pandas, requests, flask, langgraph, etc.).\n"
-        "3. ALL import statements go in the 'imports' field ONLY. "
-        "The 'code' field must NEVER contain import lines.\n"
-        "4. The 'code' field MUST end with an `if __name__ == '__main__':` block that:\n"
-        "      a) Shows a concrete, runnable example — create sample data/inputs.\n"
-        "      b) Calls every function you defined.\n"
-        "      c) Prints results with inline comments showing expected output:\n"
-        "         print(add(2, 3))   # Output: 5\n"
-        "   This rule applies to EVERY problem — algorithms, utilities, scripts, everything.\n"
-        "5. 'prefix': one or two sentences explaining what the code does.\n"
-        "6. Previous syntax error to fix (if any): {error}\n"
+        "You are a Python coding assistant. Generate clean, readable code.\n\n"
+        "RULES:\n"
+        "1. All imports in 'imports' field only. Code field has NO imports.\n"
+        "2. Code field MUST end with: if __name__ == '__main__': [example usage]\n"
+        "3. 'prefix': 1-2 sentence description of what code does.\n"
+        "4. Fix syntax error if provided: {error}\n"
+        "Python docs: {context}\n"
     )
     prompt = ChatPromptTemplate.from_messages([
         ("system", system_msg),
@@ -542,7 +537,7 @@ def favicon():
 @app.route("/generate", methods=["POST"])
 @limiter.limit("10 per minute")  # Stricter limit for code generation
 def generate_code():
-    """Generate Python code from a user prompt with performance metrics."""
+    """Generate Python code from a user prompt with optional performance optimizations."""
     try:
         data = request.get_json()
         if not data:
@@ -595,39 +590,69 @@ def generate_code():
 
         # Calculate performance metrics
         response_time = time.time() - start_time
-        # Parallelize post-generation tasks to reduce total response time
-        with concurrent.futures.ThreadPoolExecutor(max_workers=6) as executor:
-            future_hallucinations = executor.submit(check_hallucinations, result["code"], result["imports"])
-            future_quality = executor.submit(run_pylint, result["code"], result["imports"])
-            future_execution = executor.submit(run_code_sandbox, result["code"], result["imports"])
-            future_security = executor.submit(scan_security, result["code"], result["imports"])
-            future_complexity = executor.submit(analyze_complexity, result["code"], result["imports"])
-            future_tests = executor.submit(generate_and_run_tests, result["code"], result["imports"], result.get("prefix", ""))
 
-            hallucinations = future_hallucinations.result()
-            code_quality = future_quality.result()
-            execution = future_execution.result()
-            security_issues = future_security.result()
-            complexity = future_complexity.result()
-            test_results = future_tests.result()
+        # Only run heavy tasks if explicitly requested
+        tasks_to_run = {}
+        if not req.skip_security:
+            tasks_to_run["security"] = (scan_security, [result["code"], result["imports"]])
+        if not req.skip_quality:
+            tasks_to_run["quality"] = (run_pylint, [result["code"], result["imports"]])
+        if not req.skip_execution:
+            tasks_to_run["execution"] = (run_code_sandbox, [result["code"], result["imports"]])
+        if not req.skip_complexity:
+            tasks_to_run["complexity"] = (analyze_complexity, [result["code"], result["imports"]])
+        if not req.skip_tests:
+            tasks_to_run["tests"] = (generate_and_run_tests, [result["code"], result["imports"], result.get("prefix", "")])
+        
+        # Always run hallucination check (fast)
+        hallucinations = check_hallucinations(result["code"], result["imports"])
+        result["hallucinations"] = hallucinations
+
+        # Run optional tasks in parallel if any
+        if tasks_to_run:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                futures = {name: executor.submit(func, *args) for name, (func, args) in tasks_to_run.items()}
+                
+                if "security" in futures:
+                    result["security"] = futures["security"].result()
+                else:
+                    result["security"] = []
+                    
+                if "quality" in futures:
+                    result["code_quality"] = round(futures["quality"].result(), 2)
+                else:
+                    result["code_quality"] = None
+                    
+                if "execution" in futures:
+                    result["execution"] = futures["execution"].result()
+                else:
+                    result["execution"] = None
+                    
+                if "complexity" in futures:
+                    result["complexity"] = futures["complexity"].result()
+                else:
+                    result["complexity"] = None
+                    
+                if "tests" in futures:
+                    result["tests"] = futures["tests"].result()
+                else:
+                    result["tests"] = None
+        else:
+            result["security"] = []
+            result["code_quality"] = None
+            result["execution"] = None
+            result["complexity"] = None
+            result["tests"] = None
 
         result["response_time"] = round(response_time, 2)
-        result["hallucinations"] = hallucinations
-        result["code_quality"] = round(code_quality, 2)
-        result["execution"] = execution
-        result["security"] = security_issues
-        result["complexity"] = complexity
-        result["tests"] = test_results
-
         total_time = time.time() - start_time
         result["total_time"] = round(total_time, 2)
         
         logger.info(
             f"Code generated in {response_time:.2f}s | "
-            f"Quality: {code_quality:.2f}/10 | "
-            f"Security issues: {len(security_issues)} | "
-            f"Tests: {'PASS' if test_results.get('test_passed') else 'FAIL'} | "
-            f"Total pipeline: {total_time:.2f}s"
+            f"Total: {total_time:.2f}s | "
+            f"Security: {'yes' if not req.skip_security else 'no'} | "
+            f"Tests: {'yes' if not req.skip_tests else 'no'}"
         )
         return jsonify(result)
         
