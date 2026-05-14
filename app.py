@@ -61,6 +61,12 @@ os.environ["MISTRAL_API_KEY"] = MISTRAL_API_KEY
 
 logger.info(f"Initializing LLM with mistral-small-latest model")
 llm = ChatMistralAI(model="mistral-small-latest", temperature=0, max_retries=MAX_RETRIES, timeout=REQUEST_TIMEOUT)
+# ============================================================
+# LLM & Structured Output
+# ============================================================
+os.environ["MISTRAL_API_KEY"] = "API_KEY"
+
+llm = ChatMistralAI(model="mistral-large-latest", temperature=0)
 
 
 class CodeSchema(BaseModel):
